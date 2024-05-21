@@ -1,4 +1,3 @@
-import pandas as pd
 from pipeline import pipe_extr as pextr
 
 
