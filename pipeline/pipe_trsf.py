@@ -89,6 +89,7 @@ def run(steps: tuple[str] = ('normalize',)) -> None:
     if 'normalize' in steps:
         step_normalize(to_norm=('prints', 'taps'))
 
+
 if __name__ == '__main__':
     run()
 
