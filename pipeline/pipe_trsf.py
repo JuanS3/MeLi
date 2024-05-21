@@ -177,7 +177,37 @@ def step_filtering(
 
 
 @dec.time_it
-def run(steps: tuple[str, ...] = ('normalize','filter_las_week')) -> None:
+def step_grouping(
+        *,
+        to_group: tuple[tuple[str, str, str], ...],
+        folder_orig: str = 'data/staging',
+        folder_dest: str = 'data/staging',
+        step_code: str = '030_'
+    ) -> None:
+    """
+    Step to group the data
+
+    Parameters
+    ----------
+    to_group: tuple[str, ...]
+        A tuple with the names of the files to group
+    folder_orig: str, Optional
+        Path to the folder where the files are stored, by default 'data/staging'
+    folder_dest: str, Optional
+        Path to the folder where the files are stored, by default 'data/staging'
+    step_code: str, Optional
+        The step code, by default '030_'
+    """
+    pprint.title(f'STEP : Grouping -> {step_code}')
+    for parquet_file, by, op in to_group:
+        parquet: pd.DataFrame = load_parquet(path_file=f'{folder_orig}/{parquet_file}.parquet.gzip')
+        parquet_group: pd.DataFrame = trsf.group_by(df=parquet, by=by, operation=op)
+        array: tr.ParquetArray = ((parquet_group, f'{step_code}{parquet_file}'),)
+        tr.to_parquet(array=array, file_path=folder_dest, print_info=True)
+
+
+@dec.time_it
+def run(steps: tuple[str, ...] = ('normalize','filter_las_week', 'grouping')) -> None:
     """
     Pipeline to transform the data and save it in a parquet files with gzip compression,
     the data fules are stored in the 'data/staging' folder by default
@@ -197,6 +227,28 @@ def run(steps: tuple[str, ...] = ('normalize','filter_las_week')) -> None:
             1: ('010_prints',),
             3: ('010_taps', '010_pays'),
         })
+
+    if 'grouping' in steps:
+        step_grouping(
+            to_group=(
+                ('022_021_010_taps', ['user_id', 'day', 'event_data_value_prop'], 'count'),
+                ('022_021_010_pays', ['user_id', 'pay_date', 'value_prop'], 'sum'),
+                ('021_010_prints', ['user_id', 'day', 'event_data_value_prop', 'event_data_position'], 'count'),
+            )
+        )
+
+    load.dataframe_to_csv(
+        df=load_parquet(path_file='data/staging/030_022_021_010_taps.parquet.gzip'),
+        path='data/processed/taps.csv'
+    )
+    load.dataframe_to_csv(
+        df=load_parquet(path_file='data/staging/030_022_021_010_pays.parquet.gzip'),
+        path='data/processed/pays.csv'
+    )
+    load.dataframe_to_csv(
+        df=load_parquet(path_file='data/staging/021_010_prints.parquet.gzip'),
+        path='data/processed/prints.csv'
+    )
 
 
 if __name__ == '__main__':
