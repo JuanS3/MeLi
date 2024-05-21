@@ -1,4 +1,5 @@
 import pandas as pd
+from typing import Any
 from etl.extr import extraction as extr
 from etl.trsf import transform as trsf
 from etl.load import load
@@ -7,6 +8,7 @@ from etl.utils import (
     decorators as dec,
 )
 from etl import transversal as tr
+import datetime as dt
 
 
 @dec.time_it
@@ -52,7 +54,7 @@ def normalize_json_columns(*, df: pd.DataFrame) -> pd.DataFrame:
 
 
 @dec.time_it
-def step_normalize(*, to_norm: tuple[str, ...], folder_files: str = 'data/raw', step_code: str = '001_') -> None:
+def step_normalize(*, to_norm: tuple[str, ...], folder_files: str = 'data/raw', step_code: str = '010_') -> None:
     """
     Run the normalization step
 
@@ -63,8 +65,9 @@ def step_normalize(*, to_norm: tuple[str, ...], folder_files: str = 'data/raw', 
     folder_files: str, Optional
         Path to the folder where the files are stored, by default 'data/raw'
     step_code: str, Optional
-        The step code, by default '001_'
+        The step code, by default '010_'
     """
+    pprint.title(f'STEP : Normalize -> {step_code}')
     ext: str = '.parquet.gzip'
     for parquet_file in to_norm:
         parquet: pd.DataFrame = load_parquet(path_file=f'{folder_files}/{parquet_file}{ext}')
@@ -74,7 +77,77 @@ def step_normalize(*, to_norm: tuple[str, ...], folder_files: str = 'data/raw', 
 
 
 @dec.time_it
-def run(steps: tuple[str] = ('normalize',)) -> None:
+def filter_last_weeks(
+        *,
+        to_norm: tuple[str, ...],
+        folder_dest: str = 'data/staging',
+        folder_orig: str = 'data/staging',
+        step_code: str = '021_',
+        weeks: int = 1
+    ) -> None:
+    """
+    Run the filtering step
+
+    Parameters
+    ----------
+    to_norm: tuple[str, ...]
+        A tuple with the names of the files to normalize
+    folder_dest: str, Optional
+        Path to the folder where the files are stored, by default 'data/staging'
+    folder_orig: str, Optional
+        Path to the folder where the files are stored, by default 'data/staging'
+    step_code: str, Optional
+        The step code, by default '021_'
+    weeks: int, Optional
+        The number of weeks to filter, by default 1
+    """
+    pprint.title(f'STEP : Filtering -> {step_code}')
+    for parquet_file in to_norm:
+        parquet: pd.DataFrame = load_parquet(path_file=f'{folder_orig}/{parquet_file}.parquet.gzip')
+        column: str = 'day' if 'day' in parquet.columns.values else 'pay_date'
+        max_col_value: Any = trsf.get_max_data_column(df=parquet, column=column)
+        max_date: dt.datetime = dt.datetime.strptime(max_col_value, '%Y-%m-%d')
+        last_7_days: dt.date = ( max_date - dt.timedelta( days=( 7 * weeks ) ) ).date()
+        start_date: str = last_7_days.strftime('%Y-%m-%d')
+        parquet_filter: pd.DataFrame = trsf.filter_by_day(
+            df=parquet,
+            date_col=column,
+            start_date=start_date,
+            end_date=max_col_value
+        )
+        array: tr.ParquetArray = ((parquet_filter, f'{step_code}{parquet_file}'),)
+        tr.to_parquet(array=array, file_path=folder_dest, print_info=True)
+
+
+@dec.time_it
+def step_filtering(
+        *,
+        to_norm: dict[int, tuple[str, ...]],
+        folder_dest: str = 'data/staging',
+        folder_orig: str = 'data/staging',
+        step_code: str = '020_'
+    ) -> None:
+    """
+    Run the filtering step
+
+    Parameters
+    ----------
+    to_norm: tuple[str, ...]
+        A tuple with the names of the files to normalize
+    folder_dest: str, Optional
+        Path to the folder where the files are stored, by default 'data/staging'
+    folder_orig: str, Optional
+        Path to the folder where the files are stored, by default 'data/staging'
+    step_code: str, Optional
+        The step code, by default '020_'
+    """
+    pprint.title(f'STEP : Filtering -> {step_code}')
+    for ws, tnorm in to_norm.items():
+        filter_last_weeks(to_norm=tnorm, folder_dest=folder_dest, folder_orig=folder_orig, weeks=ws)
+
+
+@dec.time_it
+def run(steps: tuple[str, ...] = ('normalize','filter_las_week')) -> None:
     """
     Pipeline to transform the data and save it in a parquet files with gzip compression,
     the data fules are stored in the 'data/staging' folder by default
@@ -87,7 +160,13 @@ def run(steps: tuple[str] = ('normalize',)) -> None:
     pprint.title('Pipeline Transform')
 
     if 'normalize' in steps:
-        step_normalize(to_norm=('prints', 'taps'))
+        step_normalize(to_norm=('prints', 'taps', 'pays'))
+
+    if 'filter_las_week' in steps:
+        step_filtering(to_norm={
+            1: ('010_prints',),
+            3: ('010_taps', '010_pays'),
+        })
 
 
 if __name__ == '__main__':
