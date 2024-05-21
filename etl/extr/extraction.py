@@ -40,3 +40,21 @@ def load_json(*, file_path: str, multi_json: bool = False) -> pd.DataFrame:
     df: pd.DataFrame = pd.read_json(file_path) if not multi_json else pd.read_json(file_path, lines=True)
     return df
 
+
+def load_parquet(*, file_path: str) -> pd.DataFrame:
+    """
+    Reads a parquet file and returns a pandas dataframe
+
+    Parameters
+    ----------
+    file_path: str
+        The path of the file
+
+    Returns
+    -------
+    pd.DataFrame
+        A pandas dataframe with the data from the parquet file
+    """
+    df: pd.DataFrame = pd.read_parquet(file_path, engine='pyarrow')
+    return df
+
