@@ -116,6 +116,7 @@ class StyleText(StyleTextCode):
 
     The styles are:
         - BOLD
+        - DIM
         - UNDERLINE
         - BLINK
         - REVERSE
@@ -153,45 +154,52 @@ class StyleText(StyleTextCode):
 def title(msg: str):
     size: int = len(msg)
     line: str = '⎯' * size
-    style = StyleText()
+    style: StyleText = StyleText()
     print('\n\n')
     print(style['bold'] + msg)
     print(line)
     print()
 
 def info(msg: str):
-    color = ColorText()
+    color: ColorText = ColorText()
     symbol: str = color['BLUE'] + '➜' + color.reset()
     print(f' {symbol}  {msg}')
 
 
 def warning(msg: str):
-    color = ColorText()
+    color: ColorText = ColorText()
     symbol: str = color['YELLOW'] + '⚠' + color.reset()
     print(f' {symbol} {msg}')
 
 
 def error(msg: str):
-    color = ColorText()
+    color: ColorText = ColorText()
     symbol: str = color['RED'] + '✘' + color.reset()
     print(f' {symbol} {msg}')
 
 
 def success(msg: str):
-    color = ColorText()
+    color: ColorText = ColorText()
     symbol: str = color['GREEN'] + '✔' + color.reset()
     print(f' {symbol} {msg}')
 
 
 def debug(msg: str):
-    color = ColorText()
+    color: ColorText = ColorText()
     symbol: str = color['CYAN'] + '➤' + color.reset()
     print(f' {symbol} {msg}')
 
 
+def time(msg: str):
+    color: ColorText = ColorText()
+    style: StyleText = StyleText()
+    symbol: str = style['DIM'] + color['MAGENTA'] + '󰔟' + color.reset()
+    print(f' {symbol} {msg}')
+
+
 if __name__ == '__main__':
-    color = ColorText()
-    style = StyleText()
+    color: ColorText = ColorText()
+    style: StyleText = StyleText()
 
     msg: str = f'Hello {color["yellow"]}Me{color["BLUE"]}Li{style.end()}'
     title(msg)
