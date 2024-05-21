@@ -8,7 +8,7 @@ from etl.utils import (
 from etl.extr import extraction as extr
 
 
-ParquetArray: TypeAlias = tuple[tuple[pd.DataFrame, str]]
+ParquetArray: TypeAlias = tuple[tuple[pd.DataFrame, str], ...]
 
 
 @dec.time_it
@@ -100,6 +100,7 @@ def run() -> None:
         (prints, 'prints')
     )
     to_parquet(array=array, file_path='data/raw')
+
 
 if __name__ == '__main__':
     run()
