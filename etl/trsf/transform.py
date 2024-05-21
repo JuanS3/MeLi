@@ -51,6 +51,28 @@ def filter_by_day(*, df: pd.DataFrame, date_col: str, start_date: str, end_date:
     return df_filtered
 
 
+def filter_by_values(*, df: pd.DataFrame, column: str, values: Any) -> pd.DataFrame:
+    """
+    Filter a dataframe by a column and value.
+
+    Parameters
+    ----------
+    df
+        The dataframe to filter.
+    column
+        The column in the dataframe to filter by.
+    values
+        The values to filter by.
+
+    Returns
+    -------
+    pd.DataFrame
+        A dataframe with the filtered data.
+    """
+    df_filtered: pd.DataFrame = df[df[column].isin(values)]
+    return df_filtered
+
+
 def get_max_data_column(*, df: pd.DataFrame, column: str) -> Any:
     """
     Get the maximum value from a column in a dataframe.
@@ -69,4 +91,24 @@ def get_max_data_column(*, df: pd.DataFrame, column: str) -> Any:
     """
     max_value: Any = df[column].max()
     return max_value
+
+
+def get_column(*, df: pd.DataFrame, column: str) -> pd.Series:
+    """
+    Get a column from a dataframe.
+
+    Parameters
+    ----------
+    df
+        The dataframe to get the column from.
+    column
+        The column to get.
+
+    Returns
+    -------
+    pd.DataFrame
+        A dataframe with the column.
+    """
+    column_data: pd.Series = df[column]
+    return column_data
 
