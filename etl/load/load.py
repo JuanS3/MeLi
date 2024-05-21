@@ -22,3 +22,23 @@ def dataframe_to_parquet(
         The compression mode to use for the Parquet file, by default 'gzip'
     """
     df.to_parquet(path, compression=compression, engine='pyarrow')
+
+
+@dec.time_it
+def dataframe_to_csv(
+        *,
+        df: pd.DataFrame,
+        path: str = 'data/processed/dataframe.csv',
+    ) -> None:
+    """
+    Save a pandas DataFrame to CSV format.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        The DataFrame to save.
+    path : str | Optional
+        The path where the DataFrame should be saved, by default 'data/processed/dataframe.csv'
+    """
+    df.to_csv(path)
+
