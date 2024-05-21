@@ -154,9 +154,10 @@ def title(msg: str):
     size: int = len(msg)
     line: str = '⎯' * size
     style = StyleText()
+    print('\n\n')
     print(style['bold'] + msg)
     print(line)
-
+    print()
 
 def info(msg: str):
     color = ColorText()
