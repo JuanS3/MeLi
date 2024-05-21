@@ -99,9 +99,9 @@ def get_column(*, df: pd.DataFrame, column: str) -> pd.Series:
 
     Parameters
     ----------
-    df
+    df : pd.DataFrame
         The dataframe to get the column from.
-    column
+    column : str
         The column to get.
 
     Returns
@@ -112,3 +112,34 @@ def get_column(*, df: pd.DataFrame, column: str) -> pd.Series:
     column_data: pd.Series = df[column]
     return column_data
 
+
+def group_by(*, df: pd.DataFrame, by: list[str], operation: str) -> pd.DataFrame:
+    """
+    Group a dataframe by columns.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        The dataframe to group.
+    by : list[str]
+        The columns to group by.
+    operation : str
+        The operation to perform on the grouped data, one of
+            - sum
+            - count
+            - mean
+
+    Returns
+    -------
+    pd.DataFrame
+        A dataframe with the grouped data.
+    """
+    df_grouped: Any = df.groupby(by=by)
+    if operation == 'sum':
+        df_grouped: Any = df_grouped.sum()
+    elif operation == 'count':
+        df_grouped: Any = df_grouped.count()
+    elif operation == 'mean':
+        df_grouped: Any = df_grouped.mean()
+
+    return df_grouped
