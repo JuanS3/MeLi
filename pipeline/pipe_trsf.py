@@ -101,7 +101,7 @@ def filter_last_weeks(
     weeks: int, Optional
         The number of weeks to filter, by default 1
     """
-    pprint.title(f'STEP : Filtering -> {step_code}')
+    pprint.title(f'STEP : Filtering | last {weeks} weeks | -> {step_code}')
     for parquet_file in to_norm:
         parquet: pd.DataFrame = load_parquet(path_file=f'{folder_orig}/{parquet_file}.parquet.gzip')
         column: str = 'day' if 'day' in parquet.columns.values else 'pay_date'
@@ -120,9 +120,34 @@ def filter_last_weeks(
 
 
 @dec.time_it
+def filter_by_values(
+        *,
+        to_filter: tuple[str, ...],
+        folder_dest: str = 'data/staging',
+        folder_orig: str = 'data/staging',
+        step_code: str = '022_',
+        column: str = 'user_id',
+        filter_from: str = 'prints',
+    ):
+    pprint.title(f'STEP : Filtering | Users ID | -> {step_code}')
+
+    prints: pd.DataFrame = load_parquet(path_file=f'{folder_orig}/{filter_from}.parquet.gzip')
+    column_value: pd.Series = trsf.get_column(df=prints, column=column)
+    for tfilter in to_filter:
+        parquet: pd.DataFrame = load_parquet(path_file=f'{folder_dest}/{tfilter}.parquet.gzip')
+        parquet_filter: pd.DataFrame = trsf.filter_by_values(df=parquet, column=column, values=column_value)
+        tr.to_parquet(
+            array=(
+                (parquet_filter, f'{step_code}{tfilter}'),
+            ),
+            file_path=folder_dest,
+            print_info=True
+        )
+
+@dec.time_it
 def step_filtering(
         *,
-        to_norm: dict[int, tuple[str, ...]],
+        to_filter: dict[int, tuple[str, ...]],
         folder_dest: str = 'data/staging',
         folder_orig: str = 'data/staging',
         step_code: str = '020_'
@@ -142,8 +167,13 @@ def step_filtering(
         The step code, by default '020_'
     """
     pprint.title(f'STEP : Filtering -> {step_code}')
-    for ws, tnorm in to_norm.items():
-        filter_last_weeks(to_norm=tnorm, folder_dest=folder_dest, folder_orig=folder_orig, weeks=ws)
+    for ws, tfilter in to_filter.items():
+        filter_last_weeks(to_norm=tfilter, folder_dest=folder_dest, folder_orig=folder_orig, weeks=ws)
+
+    filter_by_values(
+        to_filter=('021_010_taps', '021_010_pays'),
+        filter_from='021_010_prints',
+    )
 
 
 @dec.time_it
@@ -163,7 +193,7 @@ def run(steps: tuple[str, ...] = ('normalize','filter_las_week')) -> None:
         step_normalize(to_norm=('prints', 'taps', 'pays'))
 
     if 'filter_las_week' in steps:
-        step_filtering(to_norm={
+        step_filtering(to_filter={
             1: ('010_prints',),
             3: ('010_taps', '010_pays'),
         })
